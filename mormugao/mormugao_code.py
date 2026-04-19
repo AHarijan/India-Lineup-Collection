@@ -18,9 +18,14 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
         tables = camelot.read_pdf(save_path, pages="all")
 
         if tables:
-            with pd.ExcelWriter(df_save_path+"/at_berth.xlsx") as writer:
+            with pd.ExcelWriter(df_save_path+"/raw_at_berth.xlsx", engine="openpyxl") as writer:
                 for i, table in enumerate(tables):
                     table.df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False)
+
+        
+        df_at_berth = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name=0, skiprows=3)
+
+        df_at_berth.to_excel(os.path.join(df_save_path,"test.xlsx"), index=False)
         
 
     except Exception as e:
