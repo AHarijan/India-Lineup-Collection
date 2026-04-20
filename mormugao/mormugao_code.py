@@ -23,9 +23,51 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
                     table.df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False)
 
         
-        df_at_berth = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name=0, skiprows=3)
+        df_at_berth_1 = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name="Table_1", skiprows=[1, 2])
+        df_at_berth_1 = df_at_berth_1[[0, 1, 2, 3, 4, 10, 13, 14]]
+        df_at_berth_1 = df_at_berth_1.rename(columns={
+            0:'BERTH',
+            1:'VESSEL NAME',
+            2:'ARR/BER/NO',
+            3:'CARGO/I/E',
+            4:'AGENT/SHPR-RECVR/STEVHOOK/',
+            10:'QTY I',
+            13:'ETD',
+            14:'REMARKS'         
+        })
+        df_at_berth_2 = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name="Table_2", header=0)
+        df_at_berth_2 = df_at_berth_2[[0, 1, 2, 3, 4, 10, 13, 14]]
+        df_at_berth_2 = df_at_berth_2.rename(columns={
+            0:'BERTH',
+            1:'VESSEL NAME',
+            2:'ARR/BER/NO',
+            3:'CARGO/I/E',
+            4:'AGENT/SHPR-RECVR/STEVHOOK/',
+            10:'QTY I',
+            13:'ETD',
+            14:'REMARKS'         
+        })
 
-        df_at_berth.to_excel(os.path.join(df_save_path,"test.xlsx"), index=False)
+        df_at_berth_3 = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name="Table_3",header=0)
+        df_at_berth_3 = df_at_berth_3[[0, 1, 2, 3, 4, 10, 13, 14]]
+        df_at_berth_3 = df_at_berth_3.rename(columns={
+            0:'BERTH',
+            1:'VESSEL NAME',
+            2:'ARR/BER/NO',
+            3:'CARGO/I/E',
+            4:'AGENT/SHPR-RECVR/STEVHOOK/',
+            10:'QTY I',
+            13:'ETD',
+            14:'REMARKS'         
+        })
+        
+        Mormugoa_vessel_at_berth = pd.concat([df_at_berth_1, df_at_berth_2, df_at_berth_3], ignore_index=True)
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].str.contains("Working ", na=False)]
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].isin(["BERTH", ""])]
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[Mormugoa_vessel_at_berth['BERTH'].notnull()]
+ 
+        Mormugoa_vessel_at_berth.to_excel(os.path.join(df_save_path,"test.xlsx"), index=False)
+
         
 
     except Exception as e:
