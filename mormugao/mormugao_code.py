@@ -65,10 +65,53 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].str.contains("Working ", na=False)]
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].isin(["BERTH", ""])]
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[Mormugoa_vessel_at_berth['BERTH'].notnull()]
- 
+
+        Mormugoa_vessel_at_berth[['VESSEL NAME', 'Drop']] = Mormugoa_vessel_at_berth['VESSEL NAME'].str.split('/', n=1, expand=True)
+        Mormugoa_vessel_at_berth['ETA1'] = Mormugoa_vessel_at_berth['ARR/BER/NO'].str[0:11]
+        Mormugoa_vessel_at_berth['ETB1'] = Mormugoa_vessel_at_berth['ARR/BER/NO'].str[12:23]
+        Mormugoa_vessel_at_berth[['CARGO', 'OPERATIONS']] = Mormugoa_vessel_at_berth['CARGO/I/E'].str.split('/', n=1, expand=True)
+        Mormugoa_vessel_at_berth[['AGENT', 'SHIPPER/RECEIVER']] = Mormugoa_vessel_at_berth['AGENT/SHPR-RECVR/STEVHOOK/'].str.split('/', expand=True)
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[['BERTH', 'VESSEL NAME', 'ETA1', 'ETB1', 'ETD', 'OPERATIONS', 'CARGO', 'QTY I', 'AGENT', 'SHIPPER/RECEIVER', 'REMARKS']]
+        
+        Mormugoa_vessel_at_berth['VESSEL NAME'] = Mormugoa_vessel_at_berth['VESSEL NAME'].str.replace(r"[.]","", regex=True)
+        Mormugoa_vessel_at_berth['ETA1'] = Mormugoa_vessel_at_berth['ETA1'].str.replace(r"[.]","-",regex=True)
+        Mormugoa_vessel_at_berth['ETB1'] = Mormugoa_vessel_at_berth['ETB1'].str.replace(r"[.]","-",regex=True)
+
+
+        today_month = int(date.today().strftime("%m"))
+        today_year = int(date.today().strftime("%Y"))
+
+        ETA_month = pd.to_numeric(
+            Mormugoa_vessel_at_berth['ETA1'].str[3:4], errors="coerce"
+        )
+
+        Mormugoa_vessel_at_berth['ETA'] = np.where(
+            Mormugoa_vessel_at_berth['VESSEL NAME'].isna(),
+            "",
+            np.where(
+            (ETA_month > 11) & (today_month < 2),
+            Mormugoa_vessel_at_berth['ETA1'].str[0:5]+"-"+str(today_year-1)+" "+Mormugoa_vessel_at_berth['ETA1'].str[6:11],
+            Mormugoa_vessel_at_berth['ETA1'].str[0:5]+"-"+str(today_year)+" "+Mormugoa_vessel_at_berth['ETA1'].str[6:11]
+            )
+        )
+
+        Mormugoa_vessel_at_berth['ETA'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETA'], format='%d-%m-%Y %H:%M', errors="coerce")
+
+
+        ETB_month = pd.to_numeric(
+            Mormugoa_vessel_at_berth['ETB1'].str[4:5], errors="coerce"
+        )
+
+        Mormugoa_vessel_at_berth['ETB'] = np.where(
+            (ETB_month > 11) & (today_month < 2),
+            Mormugoa_vessel_at_berth['ETB1'].str[0:5]+"-"+str(today_year-1)+" "+Mormugoa_vessel_at_berth['ETB1'].str[6:11],
+            Mormugoa_vessel_at_berth['ETB1'].str[0:5]+"-"+str(today_year)+" "+Mormugoa_vessel_at_berth['ETB1'].str[6:11]
+            )
+
+        Mormugoa_vessel_at_berth['ETB'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETA'], format='%d-%m-%Y %H:%M', errors="coerce")
+
         Mormugoa_vessel_at_berth.to_excel(os.path.join(df_save_path,"test.xlsx"), index=False)
 
-        
 
     except Exception as e:
 
