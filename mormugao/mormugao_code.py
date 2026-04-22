@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import camelot
 
-vessel_at_berth = 'https://mptgoa.gov.in/admin/portoperation-document/1776424265487664PORT%20POSITION%201.pdf'
+vessel_at_berth = 'https://mptgoa.gov.in/admin/portoperation-document/1776858159789344PORT%20POSITION%201.pdf'
 vessel_arrived = 'https://mptgoa.gov.in/admin/portoperation-document/1776424285894858PORT%20POSITION%202.pdf'
 vessel_expected = 'https://mptgoa.gov.in/admin/portoperation-document/1776424308318030PORT%20POSITION%203.pdf'
 
@@ -23,6 +23,7 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
                     table.df.to_excel(writer, sheet_name=f"Table_{i+1}", index=False)
 
         
+        
         df_at_berth_1 = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name="Table_1", skiprows=[1, 2])
         df_at_berth_1 = df_at_berth_1[[0, 1, 2, 3, 4, 10, 13, 14]]
         df_at_berth_1 = df_at_berth_1.rename(columns={
@@ -32,7 +33,7 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
             3:'CARGO/I/E',
             4:'AGENT/SHPR-RECVR/STEVHOOK/',
             10:'QTY I',
-            13:'ETD',
+            13:'ETD1',
             14:'REMARKS'         
         })
         df_at_berth_2 = pd.read_excel(df_save_path+ "/raw_at_berth.xlsx", sheet_name="Table_2", header=0)
@@ -44,7 +45,7 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
             3:'CARGO/I/E',
             4:'AGENT/SHPR-RECVR/STEVHOOK/',
             10:'QTY I',
-            13:'ETD',
+            13:'ETD1',
             14:'REMARKS'         
         })
 
@@ -57,25 +58,29 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
             3:'CARGO/I/E',
             4:'AGENT/SHPR-RECVR/STEVHOOK/',
             10:'QTY I',
-            13:'ETD',
+            13:'ETD1',
             14:'REMARKS'         
         })
+        
         
         Mormugoa_vessel_at_berth = pd.concat([df_at_berth_1, df_at_berth_2, df_at_berth_3], ignore_index=True)
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].str.contains("Working ", na=False)]
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].isin(["BERTH", ""])]
         Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[Mormugoa_vessel_at_berth['BERTH'].notnull()]
-
+        
         Mormugoa_vessel_at_berth[['VESSEL NAME', 'Drop']] = Mormugoa_vessel_at_berth['VESSEL NAME'].str.split('/', n=1, expand=True)
         Mormugoa_vessel_at_berth['ETA1'] = Mormugoa_vessel_at_berth['ARR/BER/NO'].str[0:11]
         Mormugoa_vessel_at_berth['ETB1'] = Mormugoa_vessel_at_berth['ARR/BER/NO'].str[12:23]
         Mormugoa_vessel_at_berth[['CARGO', 'OPERATIONS']] = Mormugoa_vessel_at_berth['CARGO/I/E'].str.split('/', n=1, expand=True)
-        Mormugoa_vessel_at_berth[['AGENT', 'SHIPPER/RECEIVER']] = Mormugoa_vessel_at_berth['AGENT/SHPR-RECVR/STEVHOOK/'].str.split('/', expand=True)
-        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[['BERTH', 'VESSEL NAME', 'ETA1', 'ETB1', 'ETD', 'OPERATIONS', 'CARGO', 'QTY I', 'AGENT', 'SHIPPER/RECEIVER', 'REMARKS']]
+        Mormugoa_vessel_at_berth[['AGENT', 'SHIPPER/RECEIVER']] = Mormugoa_vessel_at_berth['AGENT/SHPR-RECVR/STEVHOOK/'].str.split('/', n=1, expand=True)
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[['BERTH', 'VESSEL NAME', 'ETA1', 'ETB1', 'ETD1', 'OPERATIONS', 'CARGO', 'QTY I', 'AGENT', 'SHIPPER/RECEIVER', 'REMARKS']]
         
         Mormugoa_vessel_at_berth['VESSEL NAME'] = Mormugoa_vessel_at_berth['VESSEL NAME'].str.replace(r"[.]","", regex=True)
         Mormugoa_vessel_at_berth['ETA1'] = Mormugoa_vessel_at_berth['ETA1'].str.replace(r"[.]","-",regex=True)
         Mormugoa_vessel_at_berth['ETB1'] = Mormugoa_vessel_at_berth['ETB1'].str.replace(r"[.]","-",regex=True)
+        Mormugoa_vessel_at_berth['ETD1'] = Mormugoa_vessel_at_berth['ETD1'].str.replace(r"[.]","-",regex=True)
+        Mormugoa_vessel_at_berth['ETD1'] = Mormugoa_vessel_at_berth['ETD1'].str.replace(r"[/]"," ",regex=True)
+        
 
 
         today_month = int(date.today().strftime("%m"))
@@ -86,20 +91,14 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
         )
 
         Mormugoa_vessel_at_berth['ETA'] = np.where(
-            Mormugoa_vessel_at_berth['VESSEL NAME'].isna(),
-            "",
-            np.where(
             (ETA_month > 11) & (today_month < 2),
             Mormugoa_vessel_at_berth['ETA1'].str[0:5]+"-"+str(today_year-1)+" "+Mormugoa_vessel_at_berth['ETA1'].str[6:11],
             Mormugoa_vessel_at_berth['ETA1'].str[0:5]+"-"+str(today_year)+" "+Mormugoa_vessel_at_berth['ETA1'].str[6:11]
             )
-        )
-
-        Mormugoa_vessel_at_berth['ETA'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETA'], format='%d-%m-%Y %H:%M', errors="coerce")
 
 
         ETB_month = pd.to_numeric(
-            Mormugoa_vessel_at_berth['ETB1'].str[4:5], errors="coerce"
+            Mormugoa_vessel_at_berth['ETB1'].str[3:4], errors="coerce"
         )
 
         Mormugoa_vessel_at_berth['ETB'] = np.where(
@@ -107,8 +106,39 @@ def lineup_mormugoa(vessel_at_berth, vessel_arrived, vessel_expected):
             Mormugoa_vessel_at_berth['ETB1'].str[0:5]+"-"+str(today_year-1)+" "+Mormugoa_vessel_at_berth['ETB1'].str[6:11],
             Mormugoa_vessel_at_berth['ETB1'].str[0:5]+"-"+str(today_year)+" "+Mormugoa_vessel_at_berth['ETB1'].str[6:11]
             )
+        
 
-        Mormugoa_vessel_at_berth['ETB'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETA'], format='%d-%m-%Y %H:%M', errors="coerce")
+        ETD_month = pd.to_numeric(
+            Mormugoa_vessel_at_berth['ETD1'].str[3:4], errors="coerce"
+        )
+
+        Mormugoa_vessel_at_berth['ETD'] = np.where(
+            (ETD_month > 11) & (today_month < 2),
+            Mormugoa_vessel_at_berth['ETD1'].str[0:5]+"-"+str(today_year-1)+" "+Mormugoa_vessel_at_berth['ETD1'].str[6:12],
+            Mormugoa_vessel_at_berth['ETD1'].str[0:5]+"-"+str(today_year)+" "+Mormugoa_vessel_at_berth['ETD1'].str[6:12]
+            )
+
+        Mormugoa_vessel_at_berth['ETA'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETA'], format='%d-%m-%Y %H:%M', errors="coerce")
+        Mormugoa_vessel_at_berth['ETB'] = pd.to_datetime(Mormugoa_vessel_at_berth['ETB'], format='%d-%m-%Y %H:%M', errors="coerce")
+        
+        def date_format(val):
+            try:
+                return pd.to_datetime(val, dayfirst=True, errors="raise")
+            except Exception:
+               try:
+                    return pd.to_datetime(val, dayfirst=True).date()
+               except Exception:
+                   return None
+
+        Mormugoa_vessel_at_berth['ETD'] = Mormugoa_vessel_at_berth['ETD'].apply(date_format)
+        Mormugoa_vessel_at_berth['PORT'] = "MORMUGOA"
+        Mormugoa_vessel_at_berth['STATUS'] = "AT BERTH"
+
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[['PORT', 'BERTH', 'VESSEL NAME', 'ETA', 'ETB', 'ETD', 'OPERATIONS', 'CARGO', 'QTY I', 'AGENT', 'SHIPPER/RECEIVER', 'REMARKS', 'STATUS']]
+        Mormugoa_vessel_at_berth = Mormugoa_vessel_at_berth[~Mormugoa_vessel_at_berth['BERTH'].str.contains('/', na=False)]
+        Mormugoa_vessel_at_berth['OPERATIONS'] = Mormugoa_vessel_at_berth['OPERATIONS'].str.replace(r"[I]", "IMPORT", regex=True)
+        Mormugoa_vessel_at_berth['OPERATIONS'] = Mormugoa_vessel_at_berth['OPERATIONS'].str.replace(r"[E]", "EXPORT", regex=True)
+
 
         Mormugoa_vessel_at_berth.to_excel(os.path.join(df_save_path,"test.xlsx"), index=False)
 
